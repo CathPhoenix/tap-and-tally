@@ -58,6 +58,14 @@ One learner on a Class roster, known by a first name and enough of a last name t
 them apart from anyone else in the room.
 _Avoid_: learner, kid, pupil
 
+**Memory Note**:
+A short private note on a Student that helps the teacher remember who they are ("curly
+hair, sits by the window"). Shown under their name when tapped and in the Name Quiz.
+
+**Name Quiz**:
+A way of showing Live Mode where every Student's name is hidden until the teacher taps to
+check it. Nothing is recorded and nothing is saved.
+
 **Day**:
 The scope a Tap is counted in on the chart. Counts and toggles cover the teacher's own
 calendar day and start clean the next morning — there is nothing to open or close. See

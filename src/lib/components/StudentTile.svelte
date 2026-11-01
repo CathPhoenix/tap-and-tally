@@ -15,6 +15,7 @@
     compact = false,
     flash = "",
     showTotal = true,
+    hidden = false,
   }: {
     student: Student;
     total?: number;
@@ -23,14 +24,20 @@
     flash?: string;
     /** Off when the bubble is drawn in a layer above every desk instead. */
     showTotal?: boolean;
+    /** For the name quiz: a question mark until the teacher taps to check. */
+    hidden?: boolean;
   } = $props();
 </script>
 
-<span class="tile" class:faded={total === 0} class:absent class:compact>
+<span class="tile" class:faded={total === 0 && !hidden} class:absent class:compact class:hidden>
   <span class="fill" aria-hidden="true"></span>
   {#if absent}<span class="cross" aria-hidden="true"></span>{/if}
-  <span class="letters">{initials(student)}</span>
-  <span class="name">{absent && !compact ? "Absent" : shortName(student)}</span>
+  {#if hidden}
+    <span class="mystery" aria-hidden="true">?</span>
+  {:else}
+    <span class="letters">{initials(student)}</span>
+    <span class="name">{absent && !compact ? "Absent" : shortName(student)}</span>
+  {/if}
   {#if showTotal && total !== undefined && total > 0 && !absent}
     <TotalBadge {total} />
   {/if}
@@ -97,6 +104,18 @@
   /* At a desk, show the first name instead of the initials. */
   .compact .letters {
     display: none;
+  }
+
+  /* The name quiz: who sits here? */
+  .hidden {
+    background: var(--surface-sunk);
+  }
+
+  .mystery {
+    color: var(--accent);
+    font-size: clamp(1rem, 2vw, 1.6rem);
+    font-weight: 800;
+    line-height: 1;
   }
 
   /* Nobody has tapped them yet today. */

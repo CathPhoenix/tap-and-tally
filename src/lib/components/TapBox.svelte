@@ -61,6 +61,7 @@
       <h2>{fullName(student)}</h2>
       <button class="btn btn-quiet close" aria-label="Close" onclick={() => (student = null)}><Icon name="close" size={22} /></button>
     </div>
+    {#if student.note}<p class="note">{student.note}</p>{/if}
     {#if hint}<p class="hint" role="note">{hint}</p>{/if}
     <div class="buttons">
       {#each behaviors as behavior (behavior.id)}
@@ -110,6 +111,12 @@
     flex: 1;
     margin: 0;
     font-size: 1.6rem;
+  }
+
+  .note {
+    margin: 0.35rem 0 0;
+    color: var(--muted);
+    font-weight: 600;
   }
 
   .close {
