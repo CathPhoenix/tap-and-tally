@@ -94,8 +94,8 @@
     text-overflow: ellipsis;
   }
 
-  /* A desk is too small for a name; the initials carry it. */
-  .compact .name {
+  /* At a desk, show the first name instead of the initials. */
+  .compact .letters {
     display: none;
   }
 
