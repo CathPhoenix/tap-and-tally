@@ -8,6 +8,8 @@ export type Student = {
   lastName: string;
   /** A Former Student: hidden while teaching, kept in the history. */
   former?: boolean;
+  /** A private memory note to help the teacher learn who they are. */
+  note?: string;
 };
 
 export type GridOrder =

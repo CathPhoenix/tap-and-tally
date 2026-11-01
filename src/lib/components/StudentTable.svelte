@@ -20,7 +20,7 @@
   let adding = $state(false);
   let roster = $state("");
   let addDialog = $state<HTMLDialogElement>();
-  let editing = $state<{ id: string; firstName: string; lastName: string } | null>(null);
+  let editing = $state<{ id: string; firstName: string; lastName: string; note: string } | null>(null);
   let editDialog = $state<HTMLDialogElement>();
   let removing = $state<Student | null>(null);
 
@@ -46,6 +46,7 @@
     store.updateStudent(cls.id, editing.id, {
       firstName: editing.firstName.trim(),
       lastName: editing.lastName.trim(),
+      note: editing.note.trim() || undefined,
     });
     editing = null;
   }
@@ -92,7 +93,10 @@
     <tbody>
       {#each week.rows as row (row.student.id)}
         <tr class:former={row.student.former}>
-          <td class="name">{fullName(row.student)} {#if row.student.former}<span class="badge">Left</span>{/if}</td>
+          <td class="name">
+            {fullName(row.student)} {#if row.student.former}<span class="badge">Left</span>{/if}
+            {#if row.student.note}<span class="note">{row.student.note}</span>{/if}
+          </td>
           {#each row.days as cell, i (week.days[i].key)}
             <td class="day" class:today={week.days[i].today} class:ahead={week.days[i].ahead}>
               {#if cell.absent}
@@ -114,7 +118,7 @@
               actions={row.student.former
                 ? [{ label: "Bring back", onclick: () => store.updateStudent(cls.id, row.student.id, { former: false }) }]
                 : [
-                    { label: "Edit", onclick: () => (editing = { ...row.student }) },
+                    { label: "Edit", onclick: () => (editing = { ...row.student, note: row.student.note ?? "" }) },
                     { label: "Remove…", danger: true, onclick: () => (removing = row.student) },
                   ]}
             />
@@ -144,6 +148,15 @@
       <h2>Edit student</h2>
       <label>First name <input bind:value={editing.firstName} /></label>
       <label>Last name <input bind:value={editing.lastName} /></label>
+      <label>
+        Memory note
+        <textarea
+          rows="3"
+          bind:value={editing.note}
+          placeholder="Anything that helps you remember them, e.g. curly hair, sits by the window, plays hurling"
+        ></textarea>
+      </label>
+      <p class="muted small">Only you see this. It shows when you tap them in class and in the name quiz.</p>
       <div class="row">
         <span class="spacer"></span>
         <button type="button" class="btn btn-quiet" onclick={() => (editing = null)}>Cancel</button>
@@ -203,6 +216,16 @@
 
   .name {
     white-space: nowrap;
+  }
+
+  .note {
+    display: block;
+    max-width: 22rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-weight: 600;
   }
 
   th.day,

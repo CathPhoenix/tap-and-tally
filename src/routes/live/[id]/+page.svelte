@@ -11,7 +11,8 @@
   import GridOrderEditor from "$lib/components/GridOrderEditor.svelte";
   import Icon from "$lib/components/Icon.svelte";
   import LiveView from "$lib/components/LiveView.svelte";
-  import type { GridOrder, Id } from "$lib/domain/types";
+  import { fullName } from "$lib/domain/students";
+  import type { GridOrder, Id, Student } from "$lib/domain/types";
   import { store } from "$lib/store.svelte";
   import { liveTracker } from "$lib/tracker.svelte";
   import { ui } from "$lib/ui.svelte";
@@ -52,6 +53,31 @@
     await ui.exitFullscreen();
     goto(`/class/${cls.id}`);
   }
+
+  // The name quiz: every desk hides its name until tapped. Nothing is saved.
+  let quizOn = $state(false);
+  let revealed = $state(new Set<Id>());
+  let checked = $state<Student | null>(null);
+
+  function toggleQuiz() {
+    quizOn = !quizOn;
+    revealed = new Set();
+    checked = null;
+  }
+
+  function check(student: Student) {
+    const next = new Set(revealed);
+    if (next.has(student.id)) {
+      next.delete(student.id);
+      if (checked?.id === student.id) checked = null;
+    } else {
+      next.add(student.id);
+      checked = student;
+    }
+    revealed = next;
+  }
+
+  const quizCount = $derived(cls.students.filter((s) => !s.former).length);
 
   // The gear's panel.
   let settingsOpen = $state(false);
@@ -101,7 +127,7 @@
     </div>
     <ClassSwitcher {cls} />
     <div class="right">
-    <span class="hint small">Tap to track · Hold to mark absent</span>
+    <span class="hint small">{quizOn ? "Tap a desk to check who sits there" : "Tap to track · Hold to mark absent"}</span>
 
     <div class="settings" bind:this={settingsRoot}>
       <button
@@ -165,8 +191,22 @@
     </div>
   </header>
 
+  {#if quizOn}
+    <div class="quiz-strip" role="status">
+      {#if checked}
+        <span><b>{fullName(checked)}</b>{#if checked.note}{` · ${checked.note}`}{/if}</span>
+      {:else}
+        <span>Look at a student, guess their name, then tap their desk to check.</span>
+      {/if}
+      <span class="spacer"></span>
+      <span class="muted small">{revealed.size} of {quizCount} shown</span>
+      <button class="btn btn-small" onclick={() => ((revealed = new Set()), (checked = null))}>Hide all</button>
+    </div>
+  {/if}
+
   <main class="body">
     <LiveView
+      quiz={quizOn ? { revealed, check } : null}
       {cls}
       {menu}
       tracker={liveTracker}
@@ -188,6 +228,9 @@
         <Icon name="room" size={18} /> Room
       </button>
     </div>
+    <button class="quiz-toggle" class:on={quizOn} aria-pressed={quizOn} onclick={toggleQuiz}>
+      <span aria-hidden="true">?</span> Name quiz
+    </button>
   </nav>
 </div>
 
@@ -211,8 +254,8 @@
   .live {
     height: 100vh;
     height: 100dvh;
-    display: grid;
-    grid-template-rows: auto minmax(0, 1fr) auto;
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
   }
 
@@ -320,13 +363,29 @@
     background: var(--surface-sunk);
   }
 
+  .quiz-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+    margin: 0 1.5rem 0.25rem;
+    padding: 0.6rem 1rem;
+    border-radius: 12px;
+    background: var(--accent-wash);
+    font-size: 1.05rem;
+  }
+
   .body {
+    flex: 1;
     min-height: 0;
     overflow-y: auto;
     padding: 0.5rem 1.5rem 0.75rem;
   }
 
   .bar {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
     margin: 0 auto 0.85rem;
     padding: 0.35rem;
     border: 1px solid var(--border);
@@ -360,6 +419,34 @@
     background: var(--surface);
     color: var(--accent);
     box-shadow: 0 1px 3px rgb(90 58 32 / 0.15);
+  }
+
+  .quiz-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 54px;
+    padding: 0.3rem 1.2rem;
+    border: 0;
+    border-radius: 12px;
+    background: var(--surface-sunk);
+    font-weight: 800;
+    font-size: 1.02rem;
+    color: var(--muted);
+  }
+
+  .quiz-toggle span {
+    font-size: 1.2rem;
+    color: var(--accent);
+  }
+
+  .quiz-toggle.on {
+    background: var(--accent);
+    color: #fffaf2;
+  }
+
+  .quiz-toggle.on span {
+    color: inherit;
   }
 
   .arrange {

@@ -31,6 +31,7 @@
     ontap,
     tapHint = "",
     onboxclose,
+    quiz = null,
   }: {
     cls: Class;
     menu: Menu | undefined;
@@ -49,6 +50,8 @@
     ontap?: () => void;
     tapHint?: string;
     onboxclose?: () => void;
+    /** The name quiz: desks show a question mark until tapped, and tapping only checks. */
+    quiz?: { revealed: Set<Id>; check: (student: Student) => void } | null;
   } = $props();
 
   const students = $derived(cls.students.filter((s) => !s.former));
@@ -99,6 +102,7 @@
   }
 
   function handlers(student: Student) {
+    if (quiz) return { onTap: () => quiz.check(student), onHold: () => {} };
     return {
       onTap: () => {
         ontap?.();
@@ -114,15 +118,18 @@
     class="tile-button"
     class:pointed={pointTo && student.id === first?.id}
     use:hold={handlers(student)}
-    aria-label="{shortName(student)}{absentToday.has(student.id) ? ', absent' : ''}"
+    aria-label={quiz && !quiz.revealed.has(student.id)
+      ? "Who sits here?"
+      : `${shortName(student)}${!quiz && absentToday.has(student.id) ? ", absent" : ""}`}
   >
     <StudentTile
       {student}
       total={totals.get(student.id) ?? 0}
-      absent={absentToday.has(student.id)}
+      absent={!quiz && absentToday.has(student.id)}
       flash={flashes[student.id]}
       {compact}
-      {showTotal}
+      showTotal={showTotal && !quiz}
+      hidden={!!quiz && !quiz.revealed.has(student.id)}
     />
     {#if pointTo && student.id === first?.id}
       <span class="pointer" aria-hidden="true">Tap a student to track something</span>
@@ -154,7 +161,7 @@
       {#each layout.seats as seat (seat.id)}
         {@const student = byId.get(seating[seat.id])}
         {@const total = student ? (totals.get(student.id) ?? 0) : 0}
-        {#if student && total > 0 && !absentToday.has(student.id)}
+        {#if student && total > 0 && !absentToday.has(student.id) && !quiz}
           <div class="box badge-layer" style={placedStyle(seat)} aria-hidden="true">
             <div style={uprightStyle(seat)}><TotalBadge {total} /></div>
           </div>
