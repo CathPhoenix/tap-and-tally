@@ -207,6 +207,7 @@
   <main class="body">
     <LiveView
       quiz={quizOn ? { revealed, check } : null}
+      editing
       {cls}
       {menu}
       tracker={liveTracker}
