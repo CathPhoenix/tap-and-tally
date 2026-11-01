@@ -20,6 +20,8 @@
     onabsent,
     hint = "",
     onclose,
+    onnote,
+    onmove,
   }: {
     student: Student | null;
     menu: Menu | undefined;
@@ -29,7 +31,24 @@
     /** A line of guidance under the name, for the practice run. */
     hint?: string;
     onclose?: () => void;
+    /** Saves the student's memory note. Without it, the note can't be edited here. */
+    onnote?: (student: Student, note: string) => void;
+    /** Starts moving the student to another desk. Only offered in a room. */
+    onmove?: (student: Student) => void;
   } = $props();
+
+  // Writing a memory note in the box, without leaving class.
+  let noting = $state(false);
+  let draft = $state("");
+  $effect(() => {
+    if (student) noting = false;
+  });
+
+  function saveNote(event: SubmitEvent) {
+    event.preventDefault();
+    onnote?.(student!, draft.trim());
+    noting = false;
+  }
 
   let dialog = $state<HTMLDialogElement>();
   const behaviors = $derived(activeBehaviors(menu));
@@ -61,7 +80,46 @@
       <h2>{fullName(student)}</h2>
       <button class="btn btn-quiet close" aria-label="Close" onclick={() => (student = null)}><Icon name="close" size={22} /></button>
     </div>
-    {#if student.note}<p class="note">{student.note}</p>{/if}
+    {#if noting}
+      <form class="note-form" onsubmit={saveNote}>
+        <!-- svelte-ignore a11y_autofocus -->
+        <textarea
+          rows="2"
+          bind:value={draft}
+          autofocus
+          aria-label="Memory note for {student.firstName}"
+          placeholder="Anything that helps you remember them, e.g. curly hair, plays hurling"
+        ></textarea>
+        <div class="row">
+          <span class="spacer"></span>
+          <button type="button" class="btn btn-quiet btn-small" onclick={() => (noting = false)}>Cancel</button>
+          <button class="btn btn-primary btn-small">Save note</button>
+        </div>
+      </form>
+    {:else if student.note}<p class="note">{student.note}</p>{/if}
+    {#if (onnote && !noting) || onmove}
+      <div class="extras">
+        {#if onnote && !noting}
+          <button
+            class="btn btn-small"
+            onclick={() => {
+              draft = student!.note ?? "";
+              noting = true;
+            }}><Icon name="edit" size={15} /> {student.note ? "Edit note" : "Add note"}</button
+          >
+        {/if}
+        {#if onmove}
+          <button
+            class="btn btn-small"
+            onclick={() => {
+              const who = student!;
+              student = null;
+              onmove(who);
+            }}><Icon name="seats" size={15} /> Move seat</button
+          >
+        {/if}
+      </div>
+    {/if}
     {#if hint}<p class="hint" role="note">{hint}</p>{/if}
     <div class="buttons">
       {#each behaviors as behavior (behavior.id)}
@@ -117,6 +175,19 @@
     margin: 0.35rem 0 0;
     color: var(--muted);
     font-weight: 600;
+  }
+
+  .note-form {
+    display: grid;
+    gap: 0.5rem;
+    margin-top: 0.6rem;
+  }
+
+  .extras {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0.6rem 0 1rem;
   }
 
   .close {

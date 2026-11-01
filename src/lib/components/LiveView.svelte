@@ -15,6 +15,7 @@
   import StudentTile from "./StudentTile.svelte";
   import TotalBadge from "./TotalBadge.svelte";
   import TapBox from "./TapBox.svelte";
+  import { store } from "$lib/store.svelte";
 
   let {
     cls,
@@ -32,6 +33,7 @@
     tapHint = "",
     onboxclose,
     quiz = null,
+    editing = false,
   }: {
     cls: Class;
     menu: Menu | undefined;
@@ -52,6 +54,8 @@
     onboxclose?: () => void;
     /** The name quiz: desks show a question mark until tapped, and tapping only checks. */
     quiz?: { revealed: Set<Id>; check: (student: Student) => void } | null;
+    /** Lets the tap box write memory notes and move students between desks. */
+    editing?: boolean;
   } = $props();
 
   const students = $derived(cls.students.filter((s) => !s.former));
@@ -101,6 +105,24 @@
     }
   }
 
+  // Moving a student: after Move seat, the next desk tapped is theirs. A desk that's taken
+  // swaps, so whoever sat there takes the mover's old desk.
+  let moving = $state<Student | null>(null);
+
+  function moveTo(seatId: Id) {
+    const who = moving!;
+    moving = null;
+    if (!layout) return;
+    const next = { ...seating };
+    const from = Object.keys(next).find((seat) => next[seat] === who.id);
+    const other = next[seatId];
+    if (from) delete next[from];
+    next[seatId] = who.id;
+    if (from && other && other !== who.id) next[from] = other;
+    store.setSeating(cls.id, layout.id, next);
+    flash(who, "✓ Moved");
+  }
+
   function handlers(student: Student) {
     if (quiz) return { onTap: () => quiz.check(student), onHold: () => {} };
     return {
@@ -137,6 +159,13 @@
   </button>
 {/snippet}
 
+{#if moving}
+  <div class="moving" role="status">
+    <span>Tap the desk to move <b>{moving.firstName}</b> to. If someone sits there, they swap.</span>
+    <button class="btn btn-small" onclick={() => (moving = null)}>Cancel</button>
+  </div>
+{/if}
+
 {#if showRoom && layout}
   <div class="room" class:fill>
     {#if unseated.length}
@@ -155,6 +184,14 @@
           {#if student}
             <div style={uprightStyle(seat)}>{@render tile(student, true, false)}</div>
           {:else}<div class="empty-desk"></div>{/if}
+          {#if moving}
+            <button
+              class="move-target"
+              class:mover={student?.id === moving.id}
+              aria-label={student ? `Swap with ${shortName(student)}` : "Move here"}
+              onclick={() => moveTo(seat.id)}
+            ></button>
+          {/if}
         </div>
       {/each}
       <!-- Bubbles after every desk, so a neighbouring desk never covers one. -->
@@ -188,6 +225,8 @@
   onabsent={(student) => {
     if (!absentToday.has(student.id)) toggleAbsent(student);
   }}
+  onnote={editing ? (student, note) => store.updateStudent(cls.id, student.id, { note: note || undefined }) : undefined}
+  onmove={editing && showRoom ? (student) => (moving = student) : undefined}
 />
 
 <style>
@@ -238,6 +277,35 @@
   .fill .room-area {
     height: 100%;
     container-type: size;
+  }
+
+  .moving {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem 1rem;
+    margin: 0 auto 0.75rem;
+    padding: 0.6rem 1rem;
+    border-radius: 12px;
+    background: var(--accent-wash);
+    font-size: 1.05rem;
+  }
+
+  /* While moving, every desk is a target laid over the top. */
+  .move-target {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    padding: 0;
+    border: 2px dashed var(--accent);
+    background: rgb(180 83 42 / 0.06);
+    cursor: pointer;
+  }
+
+  .move-target.mover {
+    border-style: solid;
+    background: rgb(180 83 42 / 0.2);
   }
 
   .badge-layer {
