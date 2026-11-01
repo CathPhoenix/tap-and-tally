@@ -30,7 +30,7 @@
   <span class="fill" aria-hidden="true"></span>
   {#if absent}<span class="cross" aria-hidden="true"></span>{/if}
   <span class="letters">{initials(student)}</span>
-  <span class="name">{absent ? "Absent" : shortName(student)}</span>
+  <span class="name">{absent && !compact ? "Absent" : shortName(student)}</span>
   {#if showTotal && total !== undefined && total > 0 && !absent}
     <TotalBadge {total} />
   {/if}
