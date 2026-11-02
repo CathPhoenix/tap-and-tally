@@ -32,6 +32,8 @@ export type Class = {
   lastShown: LastShown;
   /** Assignments: for each Room Layout this Class has been shown in, Seat id → Student id. */
   seatings: Record<Id, Record<Id, Id>>;
+  /** A Class Note: a reminder for the whole class, shown at the top of its page. */
+  note?: string;
 };
 
 /**

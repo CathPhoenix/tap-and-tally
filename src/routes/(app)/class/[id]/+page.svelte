@@ -17,6 +17,15 @@
   const cls = $derived(store.findClass(page.params.id!)!);
   const menu = $derived(store.findMenu(cls.menuId));
   let deleting = $state(false);
+
+  // The Class Note: one reminder for the whole class, edited in place.
+  let noteDraft = $state<string | null>(null);
+
+  function saveNote(event: SubmitEvent) {
+    event.preventDefault();
+    store.updateClass(cls.id, { note: noteDraft?.trim() || undefined });
+    noteDraft = null;
+  }
 </script>
 
 <svelte:head><title>{cls.name} · Tap &amp; Tally</title></svelte:head>
@@ -28,6 +37,40 @@
     <button class="btn btn-primary" onclick={() => startClass(cls.id)}><Icon name="play" size={16} /> Start class</button>
     <MoreMenu label="Class actions" actions={[{ label: "Delete class…", danger: true, onclick: () => (deleting = true) }]} />
   </header>
+
+  {#if noteDraft !== null}
+    <form class="class-note stack" onsubmit={saveNote}>
+      <label>
+        <span class="note-label">Class note</span>
+        <!-- svelte-ignore a11y_autofocus -->
+        <textarea
+          rows="3"
+          bind:value={noteDraft}
+          autofocus
+          placeholder="A reminder for this class, e.g. Monday: collect permission slips"
+        ></textarea>
+      </label>
+      <div class="row">
+        <span class="spacer"></span>
+        <button type="button" class="btn btn-quiet" onclick={() => (noteDraft = null)}>Cancel</button>
+        <button class="btn btn-primary">Save note</button>
+      </div>
+    </form>
+  {:else if cls.note}
+    <div class="class-note" role="note">
+      <span class="note-label">Class note</span>
+      <p class="note-text">{cls.note}</p>
+      <div class="row">
+        <span class="spacer"></span>
+        <button class="btn btn-small" onclick={() => (noteDraft = cls.note ?? "")}><Icon name="edit" size={15} /> Edit</button>
+        <button class="btn btn-small" onclick={() => store.updateClass(cls.id, { note: undefined })}>Clear</button>
+      </div>
+    </div>
+  {:else}
+    <div>
+      <button class="btn btn-small" onclick={() => (noteDraft = "")}>+ Add class note</button>
+    </div>
+  {/if}
 
   <div class="columns">
     <section class="card stack">
@@ -126,6 +169,41 @@
     display: grid;
     place-items: center;
     color: rgb(46 34 25 / 0.55);
+  }
+
+  .class-note {
+    display: grid;
+    gap: 0.4rem;
+    padding: 0.9rem 1.1rem;
+    border: 1px solid var(--sun);
+    border-left: 6px solid var(--sun);
+    border-radius: var(--radius);
+    background: #fff6dc;
+    color: #2e2219;
+  }
+
+  .class-note label {
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .note-label {
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #7a5a1a;
+  }
+
+  .note-text {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    white-space: pre-wrap;
+  }
+
+  .class-note textarea {
+    font-size: 1.05rem;
   }
 
   .menu-card .btn {

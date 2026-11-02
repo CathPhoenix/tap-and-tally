@@ -62,6 +62,11 @@ _Avoid_: learner, kid, pupil
 A short private note on a Student that helps the teacher remember who they are ("curly
 hair, sits by the window"). Shown under their name when tapped and in the Name Quiz.
 
+**Class Note**:
+One reminder for a whole Class ("Monday: collect permission slips"). Shown at the top of
+the Class's page and above the class in Live Mode, where it can be hidden for now. It stays
+until the teacher clears it.
+
 **Name Quiz**:
 A way of showing Live Mode where every Student's name is hidden until the teacher taps to
 check it. Nothing is recorded and nothing is saved.
