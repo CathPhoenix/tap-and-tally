@@ -54,8 +54,9 @@
     goto(`/class/${cls.id}`);
   }
 
-  // The Class Note shows above the class until it is hidden. Hiding it doesn't clear it.
-  let noteHidden = $state(false);
+  // The Class Note shows above the class until it is hidden. Hiding it doesn't clear it,
+  // and only hides it for the class it was hidden in (the page stays open when switching).
+  let noteHiddenFor = $state<Id | null>(null);
 
   // The name quiz: every desk hides its name until tapped. Nothing is saved.
   let quizOn = $state(false);
@@ -194,10 +195,10 @@
     </div>
   </header>
 
-  {#if cls.note && !noteHidden}
+  {#if cls.note && noteHiddenFor !== cls.id}
     <div class="note-strip" role="note">
       <span class="note-text"><b>Class note:</b> {cls.note}</span>
-      <button class="btn btn-small" onclick={() => (noteHidden = true)} aria-label="Hide class note">Hide</button>
+      <button class="btn btn-small" onclick={() => (noteHiddenFor = cls.id)} aria-label="Hide class note">Hide</button>
     </div>
   {/if}
 
